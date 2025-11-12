@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.mapper.SysUserMapper">
+    
+    <resultMap id="UserWithRolesMap" type="com.example.rbac.entity.SysUser">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="nickname" property="nickname"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="avatar" property="avatar"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <collection property="roles" ofType="com.example.rbac.entity.SysRole">
+            <id column="role_id" property="id"/>
+            <result column="role_key" property="roleKey"/>
+            <result column="role_name" property="roleName"/>
+        </collection>
+    </resultMap>
+    
+    <select id="selectRoleKeysByUserId" resultType="java.lang.String">
+        SELECT r.role_key
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        AND r.status = 1
+        AND r.deleted = 0
+    </select>
+    
+    <select id="selectPermissionKeysByUserId" resultType="java.lang.String">
+        SELECT DISTINCT p.permission_key
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        AND p.deleted = 0
+    </select>
+    
+    <select id="selectMenusByUserId" resultType="com.example.rbac.entity.SysMenu">
+        SELECT DISTINCT m.*
+        FROM sys_menu m
+        INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+        INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        AND m.status = 1
+        AND m.deleted = 0
+        ORDER BY m.sort_order
+    </select>
+    
+    <select id="selectUserWithRoles" resultMap="UserWithRolesMap">
+        SELECT u.*, r.id as role_id, r.role_key, r.role_name
+        FROM sys_user u
+        LEFT JOIN sys_user_role ur ON u.id = ur.user_id
+        LEFT JOIN sys_role r ON ur.role_id = r.id AND r.deleted = 0
+        WHERE u.id = #{userId}
+        AND u.deleted = 0
+    </select>
+    
+</mapper>
